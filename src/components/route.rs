@@ -1,4 +1,4 @@
-use crate::{lib::handler::*, lib::jwt_auth::auth, AppState};
+use crate::{components::handler::*, components::jwt_auth::auth, AppState};
 use axum::{
     middleware,
     routing::{get, post},

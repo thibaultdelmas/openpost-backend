@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
 
-use crate::lib::model::{Post, User};
+use crate::components::model::{Post, User};
 
 #[derive(Debug, Serialize)]
 pub struct FilteredUser {

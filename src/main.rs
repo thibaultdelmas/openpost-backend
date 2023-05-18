@@ -4,8 +4,8 @@ use config::Config;
 use dotenv::dotenv;
 use sqlx::{mysql::MySql, mysql::MySqlPoolOptions, Pool};
 
-mod lib;
-use lib::server::Server;
+mod components;
+use components::server::Server;
 
 pub struct AppState {
     db: Pool<MySql>,
@@ -41,5 +41,4 @@ async fn main() {
     .await
     .unwrap_or_else(|err| eprintln!("Failed to bind the server: {}", err));
 
-    println!("🚀 Server started successfully");
 }

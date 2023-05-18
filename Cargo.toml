@@ -10,6 +10,7 @@ axum = { features = ["json", "query", "http1", "tokio"], default-features = fals
 axum-extra = { version = "0.7.4", features = ["cookie"] }
 chrono = { version = "0.4.24", features = ["serde"], default-features = false }
 dotenv = "0.15.0"
+time = { default-features = false, version = "0.3.21" }
 jsonwebtoken = { default-features = false, version = "8.3.0" }
 rand_core = { version = "0.6.4", default-features = false }
 serde = { version = "1.0.163", default-features = false }

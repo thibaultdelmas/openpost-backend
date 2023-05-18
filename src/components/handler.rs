@@ -13,8 +13,8 @@ use rand_core::OsRng;
 use serde_json::json;
 
 use crate::{
-    lib::response::PostResponse,
-    lib::{
+    components::response::PostResponse,
+    components::{
         model::{
             CreatePostSchema, FilterOptions, LoginUserSchema, Post, RegisterUserSchema,
             TokenClaims, User,
@@ -25,7 +25,7 @@ use crate::{
 };
 
 pub async fn health_checker_handler() -> impl IntoResponse {
-    const MESSAGE: &str = "JWT Authentication in Rust using Axum, MySql, and SQLX";
+    const MESSAGE: &str = "Alive";
 
     let json_response = serde_json::json!({
         "status": "success",
