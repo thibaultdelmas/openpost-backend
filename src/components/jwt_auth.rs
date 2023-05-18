@@ -102,7 +102,6 @@ pub fn generate_auth_cookie(user: &User, State(data): State<Arc<AppState>>) -> S
     let iat = now.timestamp() as usize;
     let exp = (now + chrono::Duration::minutes(60)).timestamp() as usize;
 
-
     let claims: TokenClaims = TokenClaims {
         sub: user.user_id_text.clone().expect("No user_id str rep"),
         exp,

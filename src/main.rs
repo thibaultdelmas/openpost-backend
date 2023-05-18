@@ -4,6 +4,9 @@ use config::Config;
 use dotenv::dotenv;
 use sqlx::{mysql::MySql, mysql::MySqlPoolOptions, Pool};
 
+use tracing::info;
+use tracing_subscriber;
+
 mod components;
 use components::server::Server;
 
@@ -15,6 +18,8 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    
+    tracing_subscriber::fmt::init();
 
     let config = &Config::init();
 
@@ -29,9 +34,9 @@ async fn main() {
             std::process::exit(1);
         }
     };
-
+    info!("DB Connected");
     let server = Server::init(config, &pool);
-
+    info!("Server online");
     axum::Server::bind(
         &format!("{}:{}", config.post_adress, config.post_port)
             .parse()
@@ -40,4 +45,5 @@ async fn main() {
     .serve(server.app.into_make_service())
     .await
     .unwrap_or_else(|err| eprintln!("Failed to bind the server: {}", err));
+    info!("Server bound");
 }
