@@ -7,7 +7,7 @@ use sqlx::{MySql, Pool};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 
-use crate::{config::Config, components::route::create_router, AppState};
+use crate::{components::route::create_router, config::Config, AppState};
 pub struct Server {
     pub app: Router,
 }

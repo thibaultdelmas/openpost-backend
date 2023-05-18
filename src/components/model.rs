@@ -3,19 +3,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, sqlx::FromRow, Clone)]
 pub struct User {
-    pub user_id: String,
+    pub user_id: Vec<u8>,
+    pub user_id_text: Option<String>,
     pub user_name: String,
     pub email: String,
     pub hash_pass: String,
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TokenClaims {
-    pub sub: String,
-    pub iat: usize,
-    pub exp: usize,
 }
 
 #[derive(Debug, Deserialize)]

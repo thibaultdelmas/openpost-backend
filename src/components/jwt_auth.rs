@@ -9,18 +9,21 @@ use axum::{
 };
 
 use axum_extra::extract::cookie::CookieJar;
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use serde::Serialize;
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
 
-use crate::{
-    components::model::{TokenClaims, User},
-    AppState,
-};
+use crate::{components::model::User, AppState};
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
     pub status: &'static str,
     pub message: String,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenClaims {
+    pub sub: String,
+    pub iat: usize,
+    pub exp: usize,
 }
 
 pub async fn auth<B>(
@@ -47,24 +50,27 @@ pub async fn auth<B>(
         (StatusCode::UNAUTHORIZED, Json(json_error))
     })?;
 
+    //let token = "{'token':".to_string() + &token.to_string() + "}";
+    println!("{}", token);
+
     let claims = decode::<TokenClaims>(
         &token,
         &DecodingKey::from_secret(data.env.jwt_secret.as_ref()),
-        &Validation::default(),
+        &Validation::new(Algorithm::HS256),
     )
-    .map_err(|_| {
+    .map_err(|e| {
         let json_error = ErrorResponse {
             status: "fail",
-            message: "Invalid token".to_string(),
+            message: "Invalid token provided".to_string() + &e.to_string() + &token.to_string(),
         };
         (StatusCode::UNAUTHORIZED, Json(json_error))
     })?
     .claims;
 
-    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|e| {
         let json_error = ErrorResponse {
             status: "fail",
-            message: "Invalid token".to_string(),
+            message: "Invalid token".to_string() + &e.to_string(),
         };
         (StatusCode::UNAUTHORIZED, Json(json_error))
     })?;
@@ -89,4 +95,26 @@ pub async fn auth<B>(
 
     req.extensions_mut().insert(user);
     Ok(next.run(req).await)
+}
+
+pub fn generate_auth_cookie(user: &User, State(data): State<Arc<AppState>>) -> String {
+    let now = chrono::Utc::now();
+    let iat = now.timestamp() as usize;
+    let exp = (now + chrono::Duration::minutes(60)).timestamp() as usize;
+
+
+    let claims: TokenClaims = TokenClaims {
+        sub: user.user_id_text.clone().expect("No user_id str rep"),
+        exp,
+        iat,
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
+    )
+    .unwrap();
+
+    return token;
 }

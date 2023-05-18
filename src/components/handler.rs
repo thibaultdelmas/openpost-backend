@@ -8,21 +8,19 @@ use axum::{
     Extension, Json,
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
-use jsonwebtoken::{encode, EncodingKey, Header};
 use rand_core::OsRng;
 use serde_json::json;
 
 use crate::{
     components::response::PostResponse,
     components::{
-        model::{
-            CreatePostSchema, FilterOptions, LoginUserSchema, Post, RegisterUserSchema,
-            TokenClaims, User,
-        },
+        model::{CreatePostSchema, FilterOptions, LoginUserSchema, Post, RegisterUserSchema, User},
         response::FilteredUser,
     },
     AppState,
 };
+
+use super::jwt_auth::generate_auth_cookie;
 
 pub async fn health_checker_handler() -> impl IntoResponse {
     const MESSAGE: &str = "Alive";
@@ -35,19 +33,32 @@ pub async fn health_checker_handler() -> impl IntoResponse {
     Json(json_response)
 }
 
+/// # Input Json format
+///
+/// ```
+/// pub struct RegisterUserSchema {
+/// pub name: String,
+/// pub email: String,
+/// pub password: String,
+/// }
+/// ```
+/// # Target route is:
+/// ```
+/// "/api/auth/register"
+/// ```
 pub async fn register_user_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<RegisterUserSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let user_exists: Option<bool> =
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM user WHERE email = $1)")
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM user WHERE email = ?)")
             .bind(body.email.to_owned().to_ascii_lowercase())
             .fetch_one(&data.db)
             .await
             .map_err(|e| {
                 let error_response = serde_json::json!({
                     "status": "fail",
-                    "message": format!("Database error: {}", e),
+                    "message": format!("First error: {}", e),
                 });
                 (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
             })?;
@@ -74,25 +85,33 @@ pub async fn register_user_handler(
         })
         .map(|hash| hash.to_string())?;
 
-    let user = sqlx::query_as!(
-        User,
-        "INSERT INTO `user` (user_name, email, hash_pass) VALUES (?, ?, ?);",
-        body.name.to_string(),
-        body.email.to_string().to_ascii_lowercase(),
-        hashed_password
-    )
-    .fetch_one(&data.db)
-    .await
-    .map_err(|e| {
-        let error_response = serde_json::json!({
-            "status": "fail",
-            "message": format!("Database error: {}", e),
-        });
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-    })?;
+    sqlx::query!("INSERT INTO user (user_id, user_name, email, hash_pass) VALUES (UNHEX(REPLACE(UUID(), '-', '')), ?, ?, ?)",
+            body.name.to_string(),
+            body.email.to_string().to_ascii_lowercase(),
+            hashed_password
+        )
+        .execute(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "fail",
+                "message": format!("Insertion error: Database error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
 
+    let new_user = sqlx::query_as!(User, "Select * FROM user where user_id = LAST_INSERT_ID() ")
+        .fetch_one(&data.db)
+        .await
+        .map_err(|e| {
+            let error_response = serde_json::json!({
+                "status": "fail",
+                "message": format!("Insertion error: Database error: {}", e),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        })?;
     let user_response = serde_json::json!({"status": "success","data": serde_json::json!({
-        "user": FilteredUser::filter_user_record(&user)
+        "user_id": &new_user
     })});
 
     Ok(Json(user_response))
@@ -139,21 +158,7 @@ pub async fn login_user_handler(
         return Err((StatusCode::BAD_REQUEST, Json(error_response)));
     }
 
-    let now = chrono::Utc::now();
-    let iat = now.timestamp() as usize;
-    let exp = (now + chrono::Duration::minutes(60)).timestamp() as usize;
-    let claims: TokenClaims = TokenClaims {
-        sub: user.user_id,
-        exp,
-        iat,
-    };
-
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
-    )
-    .unwrap();
+    let token = generate_auth_cookie(&user, State(data));
 
     let cookie = Cookie::build("token", token.to_owned())
         .path("/")

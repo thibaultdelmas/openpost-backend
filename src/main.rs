@@ -40,5 +40,4 @@ async fn main() {
     .serve(server.app.into_make_service())
     .await
     .unwrap_or_else(|err| eprintln!("Failed to bind the server: {}", err));
-
 }
