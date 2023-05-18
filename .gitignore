@@ -2,3 +2,5 @@
 .priv
 .misc
 .env
+report.json
+settings.json

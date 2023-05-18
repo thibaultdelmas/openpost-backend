@@ -13,7 +13,7 @@ use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::Serialize;
 
 use crate::{
-    model::{TokenClaims, User},
+    lib::model::{TokenClaims, User},
     AppState,
 };
 

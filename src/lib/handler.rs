@@ -1,39 +1,24 @@
 use std::sync::Arc;
 
-use argon2::{
-    password_hash::SaltString, 
-    Argon2, PasswordHash, 
-    PasswordHasher, 
-    PasswordVerifier};
+use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{
-    extract::{State, Query, Path},
+    extract::{Path, Query, State},
     http::{header, Response, StatusCode},
     response::IntoResponse,
     Extension, Json,
 };
-use axum_extra::extract::cookie::{
-    Cookie, 
-    SameSite,};
-use jsonwebtoken::{encode, 
-    EncodingKey, 
-    Header};
+use axum_extra::extract::cookie::{Cookie, SameSite};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use rand_core::OsRng;
 use serde_json::json;
-use sqlx::{Row};
+use sqlx::Row;
 
 use crate::{
-    model::{
-        LoginUserSchema, 
-        RegisterUserSchema, 
-        TokenClaims, 
+    lib::model::{
+        CreatePostSchema, FilterOptions, LoginUserSchema, Post, RegisterUserSchema, TokenClaims,
         User,
-        Post,
-        CreatePostSchema,
-        FilterOptions,
-        },
-    response::{
-        FilteredUser,
-        PostResponse},
+    },
+    lib::response::{FilteredUser, PostResponse},
     AppState,
 };
 
@@ -215,8 +200,12 @@ fn filter_user_record(user: &sqlx::mysql::MySqlRow) -> FilteredUser {
         user_id: user.get::<String, &str>("user_id").to_string(),
         email: user.get::<String, &str>("email").to_owned(),
         name: user.get::<String, &str>("user_name").to_owned(),
-        created_at: user.get::<chrono::DateTime<chrono::Utc>, &str>("created_at").to_owned(),
-        updated_at: user.get::<chrono::DateTime<chrono::Utc>, &str>("updated_at").to_owned(),
+        created_at: user
+            .get::<chrono::DateTime<chrono::Utc>, &str>("created_at")
+            .to_owned(),
+        updated_at: user
+            .get::<chrono::DateTime<chrono::Utc>, &str>("updated_at")
+            .to_owned(),
     }
 }
 
@@ -250,7 +239,11 @@ pub async fn get_post_list_handler(
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
     let notes = sqlx::query_as!(
-        Post, "SELECT * FROM post ORDER by id LIMIT ? OFFSET ?",limit as i32,offset as i32)
+        Post,
+        "SELECT * FROM post ORDER by id LIMIT ? OFFSET ?",
+        limit as i32,
+        offset as i32
+    )
     .fetch_all(&data.db)
     .await
     .map_err(|e| {
@@ -279,14 +272,12 @@ pub async fn create_post_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<CreatePostSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-
-    let query_result =
-        sqlx::query(r#"INSERT INTO post (title,content) VALUES (?, ?)"#)
-            .bind(body.title.to_string())
-            .bind(body.content.to_string())
-            .execute(&data.db)
-            .await
-            .map_err(|err: sqlx::Error| err.to_string());
+    let query_result = sqlx::query(r#"INSERT INTO post (title,content) VALUES (?, ?)"#)
+        .bind(body.title.to_string())
+        .bind(body.content.to_string())
+        .execute(&data.db)
+        .await
+        .map_err(|err: sqlx::Error| err.to_string());
 
     if let Err(err) = query_result {
         return Err((
@@ -319,7 +310,6 @@ pub async fn get_post_handler(
     let post = sqlx::query_as!(Post, r#"SELECT * FROM post WHERE title = ?"#, id)
         .fetch_one(&data.db)
         .await;
-
 
     match post {
         Ok(post) => {
