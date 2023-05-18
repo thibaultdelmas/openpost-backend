@@ -10,13 +10,11 @@ axum = { features = ["json", "query", "http1", "tokio"], default-features = fals
 axum-extra = { version = "0.7.4", features = ["cookie"] }
 chrono = { version = "0.4.24", features = ["serde"], default-features = false }
 dotenv = "0.15.0"
-env_logger = { default-features = false, version = "0.10.0" }
 jsonwebtoken = { default-features = false, version = "8.3.0" }
 rand_core = { version = "0.6.4", default-features = false }
 serde = { version = "1.0.163", default-features = false }
 serde_json = { default-features = false, version = "1.0.96" }
 sqlx = { version = "0.6.3", features = ["mysql", "chrono", "runtime-async-std-native-tls", "uuid", "macros"], default-features = false }
-time = { default-features = false, version = "0.3.21" }
 tokio = { version = "1.28.1", features = ["full"], default-features = false }
 tower-http = { version = "0.4.0", features = ["cors"] }
 uuid = { version = "1.3.2", features = ["serde"], default-features = false }

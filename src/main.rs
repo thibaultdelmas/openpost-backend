@@ -31,7 +31,7 @@ async fn main() {
     };
 
     let server = Server::init(config, &pool);
-    
+
     axum::Server::bind(
         &format!("{}:{}", config.post_adress, config.post_port)
             .parse()

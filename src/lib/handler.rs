@@ -11,14 +11,16 @@ use axum_extra::extract::cookie::{Cookie, SameSite};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use rand_core::OsRng;
 use serde_json::json;
-use sqlx::Row;
 
 use crate::{
-    lib::model::{
-        CreatePostSchema, FilterOptions, LoginUserSchema, Post, RegisterUserSchema, TokenClaims,
-        User,
+    lib::response::PostResponse,
+    lib::{
+        model::{
+            CreatePostSchema, FilterOptions, LoginUserSchema, Post, RegisterUserSchema,
+            TokenClaims, User,
+        },
+        response::FilteredUser,
     },
-    lib::response::{FilteredUser, PostResponse},
     AppState,
 };
 
@@ -90,7 +92,7 @@ pub async fn register_user_handler(
     })?;
 
     let user_response = serde_json::json!({"status": "success","data": serde_json::json!({
-        "user": filter_user_record(&user)
+        "user": FilteredUser::filter_user_record(&user)
     })});
 
     Ok(Json(user_response))
@@ -141,7 +143,7 @@ pub async fn login_user_handler(
     let iat = now.timestamp() as usize;
     let exp = (now + chrono::Duration::minutes(60)).timestamp() as usize;
     let claims: TokenClaims = TokenClaims {
-        sub: user.user_id.to_string(),
+        sub: user.user_id,
         exp,
         iat,
     };
@@ -188,45 +190,11 @@ pub async fn get_me_handler(
     let json_response = serde_json::json!({
         "status":  "success",
         "data": serde_json::json!({
-            "user": filter_user_record_from_user(&user)
+            "user": FilteredUser::filter_user_record_from_user(&user)
         })
     });
 
     Ok(Json(json_response))
-}
-
-fn filter_user_record(user: &sqlx::mysql::MySqlRow) -> FilteredUser {
-    FilteredUser {
-        user_id: user.get::<String, &str>("user_id").to_string(),
-        email: user.get::<String, &str>("email").to_owned(),
-        name: user.get::<String, &str>("user_name").to_owned(),
-        created_at: user
-            .get::<chrono::DateTime<chrono::Utc>, &str>("created_at")
-            .to_owned(),
-        updated_at: user
-            .get::<chrono::DateTime<chrono::Utc>, &str>("updated_at")
-            .to_owned(),
-    }
-}
-
-fn filter_user_record_from_user(user: &User) -> FilteredUser {
-    FilteredUser {
-        user_id: user.user_id.to_string(),
-        email: user.email.to_owned(),
-        name: user.user_name.to_owned(),
-        created_at: user.created_at.unwrap(),
-        updated_at: user.updated_at.unwrap(),
-    }
-}
-
-fn filter_db_record(post: &Post) -> PostResponse {
-    PostResponse {
-        id: post.id.to_owned(),
-        title: post.title.to_owned(),
-        content: post.content.to_owned(),
-        created_at: post.created_at.unwrap(),
-        updated_at: post.updated_at.unwrap(),
-    }
 }
 
 pub async fn get_post_list_handler(
@@ -238,7 +206,7 @@ pub async fn get_post_list_handler(
     let limit = opts.limit.unwrap_or(10);
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
-    let notes = sqlx::query_as!(
+    let posts = sqlx::query_as!(
         Post,
         "SELECT * FROM post ORDER by id LIMIT ? OFFSET ?",
         limit as i32,
@@ -254,15 +222,15 @@ pub async fn get_post_list_handler(
         (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
     })?;
 
-    let note_responses = notes
+    let post_responses: Vec<PostResponse> = posts
         .iter()
-        .map(|note| filter_db_record(&note))
-        .collect::<Vec<PostResponse>>();
+        .map(|post: &Post| -> PostResponse { PostResponse::filter_db_record(&post) })
+        .collect();
 
     let json_response = serde_json::json!({
         "status": "success",
-        "results": note_responses.len(),
-        "notes": note_responses
+        "results": post_responses.len(),
+        "posts": post_responses
     });
 
     Ok(Json(json_response))
@@ -297,7 +265,7 @@ pub async fn create_post_handler(
         })?;
 
     let post_response = serde_json::json!({"status": "success","data": serde_json::json!({
-        "post": filter_db_record(&post)
+        "post": PostResponse::filter_db_record(&post)
     })});
 
     Ok(Json(post_response))
@@ -314,25 +282,23 @@ pub async fn get_post_handler(
     match post {
         Ok(post) => {
             let post_response = serde_json::json!({"status": "success","data": serde_json::json!({
-                "post": filter_db_record(&post)
+                "post": PostResponse::filter_db_record(&post)
             })});
 
-            return Ok(Json([post_response]));
+            Ok(Json([post_response]))
         }
         Err(sqlx::Error::RowNotFound) => {
             let error_response = serde_json::json!({
                 "status": "fail",
                 "message": format!("Note with ID: {} not found", id)
             });
-            return Err((StatusCode::NOT_FOUND, Json(error_response)));
+            Err((StatusCode::NOT_FOUND, Json(error_response)))
         }
-        Err(e) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status": "error","message": format!("{:?}", e)})),
-            ));
-        }
-    };
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"status": "error","message": format!("{:?}", e)})),
+        )),
+    }
 }
 
 pub async fn delete_post_handler(
