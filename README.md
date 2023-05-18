@@ -1,12 +1,11 @@
 # First setup
 Create .env based on the .env_template provided in the repo
+```
 cargo install cargo-watch
 cargo install sqlx-cli
 export PATH=$PATH:/home/thth/.cargo/bin
 sqlx migrate run
-# Launch in dev mode
-RUST_BACKTRACE=1 cargo watch -q -c -w src/ -x run
-
+```
 # Cargo shenanigans
 ## Cargo release compilation command:
 ```
@@ -43,26 +42,26 @@ it modifies Cargo.toml during analysis and that will mess with imports.
 
 ```
 cargo install cargo-unused-features
-//Analysis 
+#Analysis 
 unused-features analyze
-//Applying report results
+#Applying report results
 unused-features prune --input ./report.json
 ```
-## cargo-bloat
+cargo-bloat
 Calculate various things size in your final binaries. Requires .symbol to be enable.
 You must not have strip = false in your compilation profile for it to work.
 ```
 cargo install cargo-bloat
-// Size of imports
+# Size of imports
 cargo bloat  --release --crates
-// Size of 10 biggest things
+# Size of 10 biggest things
 cargo bloat --release -n 10
-[crate repo:](//https://github.com/RazrFalcon/cargo-bloat)
-
+```
+[crate repo](//https://github.com/RazrFalcon/cargo-bloat)
 # References
-[Profile optimisation for compilation](https://github.com/johnthagen/min-sized-rust)
-[Cross compilation for arm and risc-v](https://kerkour.com/rust-cross-compilation
-[cross-rs wiki](https://github.com/cross-rs/cross/wiki/Getting-Started)
+- [Profile optimisation for compilation](https://github.com/johnthagen/min-sized-rust)
+- [Cross compilation for arm and risc-v](https://kerkour.com/rust-cross-compilation)
+- [cross-rs wiki](https://github.com/cross-rs/cross/wiki/Getting-Started)
 Note: it is possible to make Cross.toml files to specify custom docker images and compilation flags
 
 # RoadMap
