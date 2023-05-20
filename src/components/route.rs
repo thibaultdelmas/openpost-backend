@@ -1,9 +1,10 @@
 use crate::{components::handler::*, components::jwt_auth::auth, AppState};
 use axum::{
     middleware,
-    routing::{get, post},
+    routing::{get, post, get_service},
     Router,
 };
+use tower_http::services::ServeDir;
 use std::sync::Arc;
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -33,4 +34,11 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
                 .route_layer(auth_middleware),
         )
         .with_state(app_state)
+        .fallback_service(static_web_delivery())
 }
+
+fn static_web_delivery() -> Router {
+    Router::new()
+    .nest_service("/", get_service(ServeDir::new("./web/")))
+}
+
