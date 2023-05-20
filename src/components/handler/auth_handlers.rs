@@ -1,3 +1,24 @@
+use std::sync::Arc;
+
+use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use axum::{
+    extract::State,
+    http::{header, Response, StatusCode},
+    response::IntoResponse,
+    Json,
+};
+use axum_extra::extract::cookie::{Cookie, SameSite};
+use rand_core::OsRng;
+use serde_json::json;
+
+use crate::{
+    components::{
+        auth::generate_auth_cookie,
+        model::structure::{LoginUserSchema, RegisterUserSchema, User},
+    },
+    AppState,
+};
+
 /// # Input Json format
 ///
 /// ```
@@ -153,4 +174,3 @@ pub async fn logout_handler() -> Result<impl IntoResponse, (StatusCode, Json<ser
         .insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
     Ok(response)
 }
-

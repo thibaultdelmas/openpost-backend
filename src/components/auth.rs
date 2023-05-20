@@ -12,7 +12,7 @@ use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::{components::model::User, AppState};
+use crate::{components::model::structure::User, AppState};
 
 #[derive(Debug, Serialize)]
 pub struct ErrorResponse {
@@ -115,5 +115,5 @@ pub fn generate_auth_cookie(user: &User, State(data): State<Arc<AppState>>) -> S
     )
     .unwrap();
 
-    return token;
+    token
 }

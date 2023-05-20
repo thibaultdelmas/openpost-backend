@@ -5,7 +5,6 @@ use dotenv::dotenv;
 use sqlx::{mysql::MySql, mysql::MySqlPoolOptions, Pool};
 
 use tracing::info;
-use tracing_subscriber;
 
 mod components;
 use components::server::Server;
@@ -18,7 +17,7 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    
+
     tracing_subscriber::fmt::init();
 
     let config = &Config::init();

@@ -1,3 +1,6 @@
+use crate::components::model::{response::FilteredUser, structure::User};
+use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
+
 pub async fn get_me_handler(
     Extension(user): Extension<User>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {

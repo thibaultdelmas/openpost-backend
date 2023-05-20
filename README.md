@@ -77,3 +77,4 @@ TODOs:
 - Explore cargo test and cargo bench for tests and benchmark
 [test wiki](https://doc.rust-lang.org/book/ch11-01-writing-tests.html)
 [test guidelines](https://doc.rust-lang.org/book/ch12-04-testing-the-librarys-functionality.html)
+- [Metrics enabling?](https://github.com/ttys3/axum-otel-metrics)

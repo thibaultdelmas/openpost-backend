@@ -1,3 +1,21 @@
+use std::sync::Arc;
+
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
+use serde_json::json;
+
+use crate::{
+    components::model::{
+        response::PostResponse,
+        structure::{CreatePostSchema, FilterOptions, Post},
+    },
+    AppState,
+};
+
 pub async fn get_post_list_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,

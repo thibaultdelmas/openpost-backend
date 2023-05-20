@@ -1,11 +1,26 @@
-use crate::{components::handler::*, components::jwt_auth::auth, AppState};
+use crate::{
+    components::handler::auth_handlers::{login_user_handler, logout_handler},
+    AppState,
+};
 use axum::{
     middleware,
-    routing::{get, post, get_service},
+    routing::{get, get_service, post},
     Router,
 };
-use tower_http::services::ServeDir;
 use std::sync::Arc;
+use tower_http::services::ServeDir;
+
+use super::{
+    auth::auth,
+    handler::{
+        auth_handlers::register_user_handler,
+        health_checker_handler,
+        post_handlers::{
+            create_post_handler, delete_post_handler, get_post_handler, get_post_list_handler,
+        },
+        user_handlers::get_me_handler,
+    },
+};
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     let auth_middleware = middleware::from_fn_with_state(app_state.clone(), auth);
@@ -38,7 +53,5 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
 }
 
 fn static_web_delivery() -> Router {
-    Router::new()
-    .nest_service("/", get_service(ServeDir::new("./web/")))
+    Router::new().nest_service("/", get_service(ServeDir::new("./web/")))
 }
-

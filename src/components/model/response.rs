@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::components::model::{Post, User};
+use super::structure::{Post, User};
 
 #[derive(Debug, Serialize)]
 pub struct FilteredUser {
