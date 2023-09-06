@@ -1,4 +1,6 @@
 mod config;
+mod components;
+mod error;
 
 use config::Config;
 use dotenv::dotenv;
@@ -6,7 +8,6 @@ use sqlx::{mysql::MySql, mysql::MySqlPoolOptions, Pool};
 
 use tracing::info;
 
-mod components;
 use components::server::Server;
 
 pub struct AppState {

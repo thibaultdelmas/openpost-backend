@@ -1,27 +1,7 @@
-use axum::response::{IntoResponse, Response};
+use axum::{response::{IntoResponse, Response}, Error};
 use serde::Serialize;
 
-pub type Result<T> = core::result::Result<T, Error>;
-
-#[derive(Clone, Debug, Serialize, strum_macros::AsRefStr)]
-#[serde(tag = "type", content = "data")]
-
-pub enum authError {
-    AuthRegisterFailed,
-	AuthFailNoAuthTokenCookie,
-	AuthFailTokenWrongFormat,
-	AuthFailCtxNotInRequestExt
-}
-
-#[derive(Debug, strum_macros::AsRefStr)]
-pub enum clientError {
-	LoginFail,
-	NoAuth,
-	InvalidParams,
-	ServiceError,
-}
-
-impl core::fmt::Display for authError {
+impl core::fmt::Display for AuthError {
 	fn fmt(
 		&self,
 		fmt: &mut core::fmt::Formatter,
@@ -30,9 +10,29 @@ impl core::fmt::Display for authError {
 	}
 }
 
-impl std::error::Error for authError {}
+pub type Result<T> = core::result::Result<T, Error>;
 
-impl IntoResponse for authError {
+
+#[derive(Clone, Debug, Serialize, strum_macros::AsRefStr)]
+#[serde(tag = "type", content = "data")]
+pub enum AuthError {
+    AuthRegisterFailed,
+	AuthFailNoAuthTokenCookie,
+	AuthFailTokenWrongFormat,
+	AuthFailCtxNotInRequestExt
+}
+
+#[derive(Debug, strum_macros::AsRefStr)]
+pub enum ClientError {
+	LoginFail,
+	NoAuth,
+	InvalidParams,
+	ServiceError,
+}
+
+impl std::error::Error for AuthError {}
+
+impl IntoResponse for AuthError {
 	fn into_response(self) -> Response {
 		let mut response = StatusCode::INTERNAL_SERVER_ERROR.into_response();
 		response.extensions_mut().insert(self); 

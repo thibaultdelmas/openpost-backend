@@ -1,5 +1,6 @@
 use axum::{response::IntoResponse, Json};
 
+pub mod handler;
 pub mod auth_handlers;
 pub mod post_handlers;
 pub mod user_handlers;

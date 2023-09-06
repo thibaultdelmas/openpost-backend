@@ -1,15 +1,16 @@
+use axum::{http::header, Json, response::IntoResponse};
+
+use crate::error::AuthError;
 use std::sync::Arc;
 
 use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::{
     extract::State,
-    http::{header, Response, StatusCode},
-    response::IntoResponse,
-    Json,
+    http::{Response, StatusCode},
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use rand_core::OsRng;
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::{
     components::{
@@ -35,7 +36,7 @@ use crate::{
 pub async fn register_user_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<RegisterUserSchema>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<Json<Value>, AuthError> {
     let user_exists: Option<bool> =
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM user WHERE email = ?)")
             .bind(body.email.to_owned().to_ascii_lowercase())
@@ -55,7 +56,7 @@ pub async fn register_user_handler(
                 "status": "fail",
                 "message": "User with that email already exists",
             });
-            return Err((StatusCode::CONFLICT, Json(error_response)));
+            Err(AuthError::Json(error_response))
         }
     }
 
